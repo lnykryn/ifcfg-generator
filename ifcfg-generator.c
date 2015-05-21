@@ -49,10 +49,12 @@ void network_destroy(gpointer data);
 
 struct parser_table ptable_ethernet[] = {
         { "HWADDR",             &parser_char,   offsetof(struct network, match_macaddr)},
+        { "MACADDR",            &parser_char,   offsetof(struct network, link_macaddr)},
         { "DEVICE",             &parser_char,   offsetof(struct network, match_name)},
         { "BOOTPROTO",          &parser_dhcp,   offsetof(struct network, dhcp)},
         { "GATEWAY",            &parser_char,   offsetof(struct network, gateway)},
         { "NAME",               &parser_char,   offsetof(struct network, name)},
+        { "MTU",                &parser_int,    offsetof(struct network, mtu)},
         /* FIXME no Broadcast in [Network] */
         /* { "BROADCAST",          &parser_ip,     offsetof(struct network, broadcast)}, */
         { "IPADDR",             &parser_ip_prefix, offsetof(struct network, addr)},
@@ -132,6 +134,54 @@ int load_ifcfgs(GHashTable *ifcfg_list) {
                 log(LOG_DEBUG, "Read: %s", path);
         }
         return 0;
+}
+
+int print_link(struct network *net) {
+        char *name = NULL;
+        _cleanup_free_ char *path = NULL;
+        _cleanup_fclose_ FILE *f = NULL;
+
+        if (!net->mtu && !net->link_macaddr && (!net->match_name || !net->match_macaddr))
+                return 0;
+
+        name = net->name ? net->name :
+                net->match_name ? net->match_name :
+                net->ifcfg;
+
+        if (!net->match_name && !net->match_macaddr) {
+                log(LOG_WARNING, "To write link file for %s we need DEVICE or HWADDR", name);
+                return -EINVAL;
+        }
+
+        asprintf(&path, "%s%s.link", NETWORKD_PATH, name);
+
+        if (!path)
+                return log_oom();
+
+        f = fopen(path, "w");
+        if (!f) {
+                log(LOG_ERR, "can't access %s", path);
+                return -EACCES;
+        }
+
+        fprintf(f, "[Match]\n");
+        if (net->match_macaddr)
+                fprintf(f, "MACAddress=%s\n", net->match_macaddr);
+        else if (net->match_name)
+                fprintf(f, "OriginalName=%s\n", net->match_name);
+
+        fprintf(f, "[Link]\n");
+
+        if (net->mtu)
+                fprintf(f, "MTUBytes=%d\n", net->mtu);
+
+        if (net->link_macaddr)
+                fprintf(f, "MACAddress=%s\n", net->link_macaddr);
+
+        if (net->match_macaddr && net->match_name) {
+                fprintf(f, "NamePolicy=\n");
+                fprintf(f, "Name=%s\n", net->match_name);
+        }
 }
 
 int print_network(struct network *net) {
@@ -444,8 +494,12 @@ int main(void) {
         }
 
         g_hash_table_iter_init(&iter, networks);
-        while (g_hash_table_iter_next(&iter, &key, &value))
-                print_network(value);
+        while (g_hash_table_iter_next(&iter, &key, &value)) {
+                p = print_link(value);
+                r = r?:p;
+                p = print_network(value);
+                r = r?:p;
+        }
 
 finish:
         g_hash_table_destroy(ifcfg_list);

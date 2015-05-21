@@ -2,5 +2,4 @@
 * DEVICE should not be required
 * IPv6
 * routes
-* .link
 * .netdev

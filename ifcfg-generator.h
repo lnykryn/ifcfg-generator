@@ -61,6 +61,8 @@ struct network {
         char *dns1;
         char *dns2;
 
+        int mtu;
+
         int label;
         
         GList *ranges;  /* struct range */
