@@ -47,34 +47,34 @@
 void network_destroy(gpointer data);
 
 struct parser_table ptable_ethernet[] = {
-        { "HWADDR",             &parser_char,   offsetof(struct network, match_macaddr)},
-        { "MACADDR",            &parser_char,   offsetof(struct network, link_macaddr)},
-        { "DEVICE",             &parser_char,   offsetof(struct network, match_name)},
-        { "BOOTPROTO",          &parser_dhcp,   offsetof(struct network, dhcp)},
-        { "GATEWAY",            &parser_char,   offsetof(struct network, gateway)},
-        { "NAME",               &parser_char,   offsetof(struct network, name)},
-        { "MTU",                &parser_int,    offsetof(struct network, mtu)},
+        { "HWADDR",          IFCFG_ETHERNET,   &parser_char,   offsetof(struct network, match_macaddr)},
+        { "MACADDR",         IFCFG_ETHERNET,   &parser_char,   offsetof(struct network, link_macaddr)},
+        { "DEVICE",          IFCFG_ETHERNET,   &parser_char,   offsetof(struct network, match_name)},
+        { "BOOTPROTO",       IFCFG_ETHERNET,   &parser_dhcp,   offsetof(struct network, dhcp)},
+        { "GATEWAY",         IFCFG_ETHERNET,   &parser_char,   offsetof(struct network, gateway)},
+        { "NAME",            IFCFG_ETHERNET,   &parser_char,   offsetof(struct network, name)},
+        { "MTU",             IFCFG_ETHERNET,   &parser_int,    offsetof(struct network, mtu)},
         /* FIXME no Broadcast in [Network] */
         /* { "BROADCAST",          &parser_ip,     offsetof(struct network, broadcast)}, */
-        { "IPADDR",             &parser_ip_prefix, offsetof(struct network, addr)},
+        { "IPADDR",          IFCFG_ETHERNET,   &parser_ip_prefix, offsetof(struct network, addr)},
         /* prefix or netmask is handled in parser_ip_prefix */
-        { "PREFIX",             NULL,           0},
-        { "NETMASK",            NULL,           0},
+        { "PREFIX",          IFCFG_ETHERNET,   NULL,           0},
+        { "NETMASK",         IFCFG_ETHERNET,   NULL,           0},
         /* ignored values */
-        { "NM_CONTROLLED",      NULL,           0},
-        { "UUID",               NULL,           0},
-        { "NETBOOT",            NULL,           0}, /* FIXME should be probably critical connection */
-        { NULL,                 NULL,           0}
+        { "NM_CONTROLLED",   IFCFG_ETHERNET,   NULL,           0},
+        { "UUID",            IFCFG_ETHERNET,   NULL,           0},
+        { "NETBOOT",         IFCFG_ETHERNET,   NULL,           0}, /* FIXME should be probably critical connection */
+        { NULL,              0,                NULL,           0}
 };
 
 struct parser_table ptable_ethernet_range[] = {
-        { "IPADDR_START",       &parser_ip,     offsetof(struct range, start)},
-        { "IPADDR_END",         &parser_ip,     offsetof(struct range, end)},
-        { "CLONENUM_START",     &parser_int,    offsetof(struct range, clonum)},
-        { "PREFIX",             &parser_int,    offsetof(struct range, prefix)},
-        { "NETMASK",            &parser_netmask,offsetof(struct range, prefix)},
-        { "BROADCAST",          &parser_ip,     offsetof(struct range, broadcast)},
-        { NULL,                 NULL,           0}
+        { "IPADDR_START",    IFCFG_RANGE,   &parser_ip,     offsetof(struct range, start)},
+        { "IPADDR_END",      IFCFG_RANGE,   &parser_ip,     offsetof(struct range, end)},
+        { "CLONENUM_START",  IFCFG_RANGE,   &parser_int,    offsetof(struct range, clonum)},
+        { "PREFIX",          IFCFG_RANGE,   &parser_int,    offsetof(struct range, prefix)},
+        { "NETMASK",         IFCFG_RANGE,   &parser_netmask,offsetof(struct range, prefix)},
+        { "BROADCAST",       IFCFG_RANGE,   &parser_ip,     offsetof(struct range, broadcast)},
+        { NULL,              0,   NULL,           0}
 
 };
 
@@ -342,10 +342,9 @@ int process_ethernet_aliases(struct network *net, GHashTable *ifcfg_list) {
 
                         ran->prefix=-1;
 
-                        //we can inherit some things from parent config
-                        parse(ran, net->sv, ptable_ethernet_range, false);
-
-                        parse(ran, sv, ptable_ethernet_range, true);
+                        /* we can inherit some things from parent config */
+                        parse(ran, net->sv, ptable_ethernet_range, NULL, false);
+                        parse(ran, sv, ptable_ethernet_range, NULL, true);
 
                         if (ran->start.s_addr == 0 || ran->end.s_addr == 0) {
                                 log(LOG_ERR, "%s: range file is not valid, skipping", name);
@@ -380,7 +379,7 @@ int process_ethernet_aliases(struct network *net, GHashTable *ifcfg_list) {
 
                         bzero(n, sizeof (struct network));
 
-                        r = parse(n, sv, ptable_ethernet, true);
+                        r = parse(n, sv, ptable_ethernet, &n->type, true);
                         if (r) {
                                 free(n);
                                 log(LOG_ERR, "%s: ifcfg file is not valid, skipping", name);
@@ -426,7 +425,7 @@ int process_ethernet(char *name, shvarFile *sv, GHashTable *ifcfg_list, GHashTab
         if (!n->ifcfg)
                 return log_oom();
 
-        r = parse(n, sv, ptable_ethernet, true);
+        r = parse(n, sv, ptable_ethernet, &n->type, true);
         if(r)
                 return r;
 

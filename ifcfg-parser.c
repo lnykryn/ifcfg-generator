@@ -191,7 +191,7 @@ int parser_int(shvarFile *sv, char *key, char *value, void *store) {
         return safe_atoi(value, i);
 }
 
-int parse(void *target, shvarFile *sv, struct parser_table *table, bool warn) {
+int parse(void *target, shvarFile *sv, struct parser_table *table, enum ifcfg_type *type,  bool warn) {
         GList *l;
         int i;
 
@@ -221,6 +221,15 @@ int parse(void *target, shvarFile *sv, struct parser_table *table, bool warn) {
 
                 for (i = 0; table[i].key != NULL && found == 0; i++) {
                         if (!strncmp(table[i].key, key, n)) {
+                                if (type) {
+                                        /* FIXME and find a better solution*/
+                                        if (*type == table[i].type || *type == IFCFG_ALL || *type==IFCFG_ETHERNET)
+                                                *type = table[i].type;
+                                        else {
+                                                log(LOG_WARNING, "%s: unsupported key %s in this context", sv->fileName, key);
+                                                continue;
+                                        }
+                                }
                                 found = 1;
                                 if (table[i].parser)
                                         table[i].parser(sv, key, value, target + table[i].offset);

@@ -20,8 +20,11 @@
 
 #pragma once
 
+#include "ifcfg-parser.h"
+
 struct parser_table {
         const char *key;
+        enum ifcfg_type type;
         int (* parser)(shvarFile *, char *, char *, void *);
         const size_t offset;
 };
@@ -35,4 +38,4 @@ int parser_ip(shvarFile *sv, char *key, char *value, void *store);
 int parser_int(shvarFile *sv, char *key, char *value, void *store);
 int parser_netmask(shvarFile *sv, char *key, char *value, void *store);
 
-int parse(void *target, shvarFile *sv, struct parser_table *table, bool warn);
+int parse(void *target, shvarFile *sv, struct parser_table *table, enum ifcfg_type *type, bool warn);

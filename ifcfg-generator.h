@@ -21,29 +21,30 @@
 #pragma once
 #include <stdbool.h>
 
-enum netdev_type {
-        NETDEV_BRIDGE,
-        NETDEV_BOND,
-        NETDEV_VLAN,
-        _NETDEV_MAX
+enum ifcfg_type {
+        IFCFG_INVALID = -1,
+        IFCFG_ALL = 0,
+        IFCFG_ETHERNET,
+        IFCFG_RANGE,
 };
 
-struct netdev {
-        enum netdev_type type;
-        char *name;
-};
 
 struct range {
-    struct in_addr start;
-    struct in_addr end;
-    int prefix;
-    int clonum; 
-    struct in_addr broadcast;
+        struct in_addr start;
+        struct in_addr end;
+        int prefix;
+        int clonum;
+        struct in_addr broadcast;
+};
+
+union netdev {
 };
 
 struct network {
         char *name;
         char *ifcfg;
+        enum ifcfg_type type;
+
         shvarFile *sv;
 
         char *match_macaddr;
@@ -67,4 +68,6 @@ struct network {
         
         GList *ranges;  /* struct range */
         GList *aliases; /* struct network */
+
+        union netdev netdev;
 };
