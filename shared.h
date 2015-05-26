@@ -50,7 +50,6 @@ int log_oom();
 DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, fclose);
 DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, pclose);
 DEFINE_TRIVIAL_CLEANUP_FUNC(DIR*, closedir);
-DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, endmntent);
 
 #define _cleanup_free_ _cleanup_(freep)
 #define _cleanup_fclose_ _cleanup_(fclosep)
