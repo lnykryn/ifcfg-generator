@@ -177,10 +177,12 @@ int parser_ip(shvarFile *sv, char *key, char *value, void *store) {
         int r;
 
         r = inet_aton(value, in);
-        if (r)
-                in->s_addr = htonl(in->s_addr);
+        if (!r)
+                return -EINVAL;
 
-        return r ? 0 : -EINVAL;
+        in->s_addr = htonl(in->s_addr);
+
+        return 0;
 }
 
 int parser_int(shvarFile *sv, char *key, char *value, void *store) {
