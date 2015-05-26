@@ -17,11 +17,13 @@
  *
  */
 
-#include "shared.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+
+#include "shvar.h"
+#include "shared.h"
 
 
 void log_internal(char *level, char *format, ...) {

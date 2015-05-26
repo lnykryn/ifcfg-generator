@@ -1,3 +1,4 @@
+CFLAGS = -std=gnu11 -D_GNU_SOURCE
 PROGS=ifcfg-generator
 GENERATOR_OBJS=ifcfg-generator.o shvar.o ifcfg-parser.o shared.o
 
